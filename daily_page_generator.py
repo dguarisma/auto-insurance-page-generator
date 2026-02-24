@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 import os
 import subprocess
-from generate_local_pages import generate_html, load_cities_data
+from generate_local_pages import generate_html, load_cities_data, city_state_id
 
 # Archivo de seguimiento de progreso
 TRACKER_FILE = 'generation_tracker.json'
@@ -32,16 +32,27 @@ def generate_batch(cities):
 def run_daily_generation():
     tracker = load_tracker()
     cities = load_cities_data()
-    remaining_cities = [city for city in cities if f"{city['city']}-{city['state']}" not in tracker['generated_cities']]
-    
-    # Seleccionamos un batch de 50 ciudades
-    batch = random.sample(remaining_cities, 50)
+    if not cities:
+        print('No cities loaded. Ensure uscities.csv is present in the project root.')
+        return
+
+    # Build remaining using normalized ids
+    remaining_cities = [city for city in cities if city_state_id(city['city'], city['state']) not in tracker.get('generated_cities', [])]
+
+    # Select up to 50 cities (handle case when fewer remain)
+    MAX_BATCH = 50
+    batch_size = min(MAX_BATCH, len(remaining_cities))
+    if batch_size == 0:
+        print('No remaining cities to generate.')
+        return
+
+    batch = random.sample(remaining_cities, batch_size)
     
     generated_pages = generate_batch(batch)
     
     # Actualizar el progreso
     for city_data in batch:
-        tracker['generated_cities'].append(f"{city_data['city']}-{city_data['state']}")
+        tracker['generated_cities'].append(city_state_id(city_data['city'], city_data['state']))
     
     tracker['last_run'] = datetime.now().isoformat()
     save_tracker(tracker)

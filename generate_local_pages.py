@@ -79,9 +79,12 @@ def load_cities_data():
 # Generar HTML para cada ciudad
 def generate_html(city, state):
     # Normalizar nombre de archivo
-    safe_city = ''.join(c for c in city if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
-    safe_state = ''.join(c for c in state if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
-    city_state = f"{safe_city}-{safe_state}"
+    def city_state_id(city_name, state_name):
+        safe_city = ''.join(c for c in city_name if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+        safe_state = ''.join(c for c in state_name if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+        return f"{safe_city}-{safe_state}"
+
+    city_state = city_state_id(city, state)
     out_dir = 'generated_pages'
     os.makedirs(out_dir, exist_ok=True)
     file_name = f"{out_dir}/{city_state}.html"
@@ -107,6 +110,13 @@ def generate_html(city, state):
         file.write(content)
 
     return file_name
+
+
+# Reusable helper for consistent IDs
+def city_state_id(city_name, state_name):
+    safe_city = ''.join(c for c in city_name if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+    safe_state = ''.join(c for c in state_name if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+    return f"{safe_city}-{safe_state}"
 
 # Main: Generar páginas
 def main():
