@@ -14,31 +14,43 @@ def load_cities_data():
         print(f"File not found: {csv_path}")
         return cities
 
+    processed = 0
+    skipped = 0
     with open(csv_path, 'r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
 
-        # Leer posible encabezado
-        header = next(reader, None)
+        # Intentar detectar si hay encabezado inspeccionando la primera fila
+        first_row = next(reader, None)
+        header = None
         city_idx = 0
         state_idx = 2
         pop_idx = 8
 
-        if header:
-            low = [h.lower() for h in header]
-            for name in ('city', 'city_ascii'):
-                if name in low:
-                    city_idx = low.index(name)
-                    break
-            for name in ('state_id', 'state', 'state_name'):
-                if name in low:
-                    state_idx = low.index(name)
-                    break
-            for name in ('population', 'pop'):
-                if name in low:
-                    pop_idx = low.index(name)
-                    break
+        rows_iter = reader
 
-        for row in reader:
+        if first_row:
+            low_first = [c.lower() for c in first_row]
+            if any(name in ''.join(low_first) for name in ('city', 'state', 'population', 'pop')):
+                header = first_row
+                # reconstruir índices desde el encabezado
+                low = [h.lower() for h in header]
+                for name in ('city', 'city_ascii'):
+                    if name in low:
+                        city_idx = low.index(name)
+                        break
+                for name in ('state_id', 'state', 'state_name'):
+                    if name in low:
+                        state_idx = low.index(name)
+                        break
+                for name in ('population', 'pop'):
+                    if name in low:
+                        pop_idx = low.index(name)
+                        break
+            else:
+                # No hay encabezado: procesar la primera fila como dato
+                rows_iter = [first_row] + list(reader)
+
+        for row in rows_iter:
             # Ignorar filas vacías
             if not row or not any(cell.strip() for cell in row):
                 continue
@@ -56,9 +68,12 @@ def load_cities_data():
                     raise ValueError('missing city')
 
                 cities.append({'city': city, 'state': state, 'population': population})
+                processed += 1
             except Exception as e:
+                skipped += 1
                 print(f"Warning: skipping invalid line: {row} ({e})")
 
+    print(f"Cities processed: {processed}. Lines skipped: {skipped}.")
     return cities
 
 # Generar HTML para cada ciudad
