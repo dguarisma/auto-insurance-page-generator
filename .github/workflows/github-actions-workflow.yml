@@ -17,7 +17,7 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install requests
       - name: Ejecutar generación de páginas
         run: python3 daily_page_generator.py
       - name: Subir a Cloudflare Pages

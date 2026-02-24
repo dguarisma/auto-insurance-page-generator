@@ -7,11 +7,13 @@ from datetime import datetime
 def load_cities_data():
     cities = []
     with open('uscities.csv', 'r') as file:
-        for line in file.readlines():
-            # Suponiendo que el CSV tiene el formato Ciudad, Estado, Población
-            city, state, population = line.strip().split(',')
-            if int(population) <= 2500:  # Filtramos por ciudades de menos de 2500 habitantes
-                cities.append({'city': city, 'state': state})
+        for line in file:
+            if line.strip():  # Ignorar líneas vacías
+                try:
+                    city, state, population = line.strip().split(',')
+                    cities.append({'city': city, 'state': state, 'population': int(population)})
+                except ValueError:
+                    print(f"Warning: skipping invalid line: {line.strip()}")
     return cities
 
 # Generar HTML para cada ciudad
