@@ -1,31 +1,75 @@
 import os
 import json
 import random
+import csv
 from datetime import datetime
+
 
 # Cargar los datos de las ciudades
 def load_cities_data():
     cities = []
-    with open('uscities.csv', 'r') as file:
-        # Ignorar la primera línea (encabezado)
-        next(file)
-        
-        for line in file:
-            if line.strip():  # Ignorar líneas vacías
-                try:
-                    # Asumimos que el formato es: ciudad, estado, población
-                    columns = line.strip().split(',')
-                    # Solo procesamos las tres primeras columnas
-                    city, state, population = columns[0], columns[2], columns[8]
-                    cities.append({'city': city, 'state': state, 'population': int(population)})
-                except ValueError:
-                    print(f"Warning: skipping invalid line: {line.strip()}")
+    csv_path = 'uscities.csv'
+
+    if not os.path.exists(csv_path):
+        print(f"File not found: {csv_path}")
+        return cities
+
+    with open(csv_path, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+
+        # Leer posible encabezado
+        header = next(reader, None)
+        city_idx = 0
+        state_idx = 2
+        pop_idx = 8
+
+        if header:
+            low = [h.lower() for h in header]
+            for name in ('city', 'city_ascii'):
+                if name in low:
+                    city_idx = low.index(name)
+                    break
+            for name in ('state_id', 'state', 'state_name'):
+                if name in low:
+                    state_idx = low.index(name)
+                    break
+            for name in ('population', 'pop'):
+                if name in low:
+                    pop_idx = low.index(name)
+                    break
+
+        for row in reader:
+            # Ignorar filas vacías
+            if not row or not any(cell.strip() for cell in row):
+                continue
+
+            try:
+                city = row[city_idx].strip() if len(row) > city_idx else ''
+                state = row[state_idx].strip() if len(row) > state_idx else ''
+                pop_raw = row[pop_idx].strip() if len(row) > pop_idx else '0'
+
+                # Limpieza de población (puede contener comas)
+                pop_clean = pop_raw.replace('"', '').replace(',', '')
+                population = int(float(pop_clean)) if pop_clean else 0
+
+                if not city:
+                    raise ValueError('missing city')
+
+                cities.append({'city': city, 'state': state, 'population': population})
+            except Exception as e:
+                print(f"Warning: skipping invalid line: {row} ({e})")
+
     return cities
 
 # Generar HTML para cada ciudad
 def generate_html(city, state):
-    city_state = f"{city}-{state}"
-    file_name = f"generated_pages/{city_state}.html"
+    # Normalizar nombre de archivo
+    safe_city = ''.join(c for c in city if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+    safe_state = ''.join(c for c in state if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+    city_state = f"{safe_city}-{safe_state}"
+    out_dir = 'generated_pages'
+    os.makedirs(out_dir, exist_ok=True)
+    file_name = f"{out_dir}/{city_state}.html"
     
     content = f"""
     <html>
