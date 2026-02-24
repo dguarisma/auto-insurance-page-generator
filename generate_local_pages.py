@@ -7,10 +7,16 @@ from datetime import datetime
 def load_cities_data():
     cities = []
     with open('uscities.csv', 'r') as file:
+        # Ignorar la primera línea (encabezado)
+        next(file)
+        
         for line in file:
             if line.strip():  # Ignorar líneas vacías
                 try:
-                    city, state, population = line.strip().split(',')
+                    # Asumimos que el formato es: ciudad, estado, población
+                    columns = line.strip().split(',')
+                    # Solo procesamos las tres primeras columnas
+                    city, state, population = columns[0], columns[2], columns[8]
                     cities.append({'city': city, 'state': state, 'population': int(population)})
                 except ValueError:
                     print(f"Warning: skipping invalid line: {line.strip()}")
