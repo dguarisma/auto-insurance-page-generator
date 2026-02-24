@@ -1,0 +1,24 @@
+name: Generación diaria de páginas
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Se ejecuta todos los días a las 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  generate_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Ejecutar generación de páginas
+        run: python3 daily_page_generator.py
+      - name: Subir a Cloudflare Pages
+        run: python3 cloudflare_deploy.py
